@@ -1,0 +1,87 @@
+
+server:
+  port: 8081
+
+spring:
+
+  application:
+    name: IDENTITY-SERVICE
+
+  r2dbc:
+    url: r2dbc:h2:file:///./data/identitydb
+#      r2dbc:h2:mem:///identitydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+  jackson:
+    default-property-inclusion: non_null
+
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+  instance:
+    prefer-ip-address: false
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+
+jwt:
+  secret: ${JWT_SECRET:RiskTwinNexusJwtSecretKeyForDevelopmentOnly123456789}
+  expiration: 3600000
+
+identity:
+  preloaded-users:
+
+    - name: System Administrator
+      email: admin@risktwin.com
+      password: ${ADMIN_INITIAL_PASSWORD:Admin@123}
+      role: ADMIN
+
+    - name: Underwriting Officer
+      email: underwriter@risktwin.com
+      password: ${UNDERWRITER_INITIAL_PASSWORD:Underwriter@123}
+      role: UNDERWRITER
+
+    - name: Claims Adjuster
+      email: claims@risktwin.com
+      password: ${CLAIMS_INITIAL_PASSWORD:Claims@123}
+      role: CLAIMS_ADJUSTER
+
+    - name: Risk Engineer
+      email: risk@risktwin.com
+      password: ${RISK_INITIAL_PASSWORD:Risk@123}
+      role: RISK_ENGINEER
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  level:
+    com.risktwin.identity: INFO
+    org.springframework.security: INFO
+    org.springframework.r2dbc: INFO

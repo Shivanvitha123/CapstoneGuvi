@@ -1,0 +1,20 @@
+{
+  "groups": [
+    {
+      "name": "identity",
+      "type": "org.example.identityservice.config.SeedUserProperties",
+      "sourceType": "org.example.identityservice.config.SeedUserProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "identity.preloaded-users",
+      "type": "java.util.List<org.example.identityservice.config.SeedUserProperties$SeedUser>",
+      "sourceType": "org.example.identityservice.config.SeedUserProperties"
+    }
+  ],
+  "hints": [],
+  "ignored": {
+    "properties": []
+  }
+}
