@@ -1,0 +1,60 @@
+
+server:
+  port: 8084
+
+spring:
+  application:
+    name: RISK-INTELLIGENCE-SERVICE
+
+  r2dbc:
+    url: r2dbc:h2:file:///./data/riskdb
+#      r2dbc:h2:mem:///riskdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+  jackson:
+    default-property-inclusion: non_null
+
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+  instance:
+    prefer-ip-address: false
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+
+jwt:
+  secret: ${JWT_SECRET:RiskTwinNexusJwtSecretKeyForDevelopmentOnly123456789}
+  expiration: 3600000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  level:
+    org.example.riskintelligenceservice: INFO
+    org.springframework.security: INFO
+    org.springframework.r2dbc: INFO
+
