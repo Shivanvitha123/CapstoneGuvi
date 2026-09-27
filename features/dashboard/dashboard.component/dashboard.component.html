@@ -1,0 +1,80 @@
+@if (user$ | async; as user) {
+
+  <app-page-header
+    title="Dashboard"
+    subtitle="A clear view of your insurance risk operations."
+  />
+
+  <section class="welcome">
+    <div>
+      <span class="eyebrow">GOOD TO SEE YOU</span>
+      <h2>Hello, {{ user.name }} 👋</h2>
+      <p>
+        Your RiskTwin workspace is ready.
+        Monitor policies, understand risk and manage claims from one place.
+      </p>
+    </div>
+
+    <div class="welcome-icon">◈</div>
+  </section>
+
+  <section class="cards">
+
+    <a routerLink="/policies" class="card">
+      <div class="icon blue">▣</div>
+      <div>
+        <strong>Policies</strong>
+        <span>Review and manage underwriting.</span>
+      </div>
+      <b>→</b>
+    </a>
+
+    <a routerLink="/risk" class="card">
+      <div class="icon purple">◈</div>
+      <div>
+        <strong>Risk Intelligence</strong>
+        <span>Assess exposure and simulate scenarios.</span>
+      </div>
+      <b>→</b>
+    </a>
+
+    <a routerLink="/claims" class="card">
+      <div class="icon green">✓</div>
+      <div>
+        <strong>Claims</strong>
+        <span>Track claims and recovery workflows.</span>
+      </div>
+      <b>→</b>
+    </a>
+
+    <a routerLink="/business" class="card">
+      <div class="icon orange">◇</div>
+      <div>
+        <strong>Business Profile</strong>
+        <span>Keep your organisation information current.</span>
+      </div>
+      <b>→</b>
+    </a>
+
+  </section>
+
+  <section class="info">
+    <div>
+      <span class="eyebrow">YOUR ROLE</span>
+      <h3>{{ user.role }}</h3>
+      <p>
+        Your navigation and permitted actions are controlled
+        according to your assigned role.
+      </p>
+    </div>
+
+    <div class="security">
+      <span>✓</span>
+      <div>
+        <strong>Account secured</strong>
+        <small>Authenticated through RiskTwin Identity.</small>
+      </div>
+    </div>
+  </section>
+
+}

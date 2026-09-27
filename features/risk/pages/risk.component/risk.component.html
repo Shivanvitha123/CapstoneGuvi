@@ -1,0 +1,590 @@
+<div class="risk-page">
+
+  <!-- Page Heading -->
+  <div class="page-heading">
+
+    <div>
+      <span class="eyebrow">RISK INTELLIGENCE</span>
+
+      <h1>Risk Intelligence</h1>
+
+      <p>
+        Assess business risk and simulate potential scenarios.
+      </p>
+    </div>
+
+    <div class="heading-actions">
+
+      @if (canManageSimulations) {
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="openSimulationForm()">
+          + New Simulation
+        </button>
+      }
+
+      @if (canManageAssessments) {
+        <button
+          class="primary-btn"
+          type="button"
+          (click)="openAssessmentForm()">
+          + Risk Assessment
+        </button>
+      }
+
+    </div>
+
+  </div>
+
+
+  <!-- Error Message -->
+  @if (error$ | async; as error) {
+    <div class="alert error">
+      {{ error }}
+    </div>
+  }
+
+
+  <!-- Success Message -->
+  @if (success$ | async; as success) {
+    <div class="alert success">
+      {{ success }}
+    </div>
+  }
+
+
+  <!-- Tabs -->
+  <div class="tabs">
+
+    <button
+      type="button"
+      [class.active]="activeTab === 'assessments'"
+      (click)="setTab('assessments')">
+      Risk Assessments
+    </button>
+
+    @if (canViewSimulations) {
+      <button
+        type="button"
+        [class.active]="activeTab === 'simulations'"
+        (click)="setTab('simulations')">
+        Simulations
+      </button>
+    }
+
+  </div>
+
+
+  <!-- Risk Assessments -->
+  @if (activeTab === 'assessments') {
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <div>
+          <h2>Risk Assessments</h2>
+
+          <p>
+            Review assessed risk scores and recommendations.
+          </p>
+        </div>
+
+      </div>
+
+
+      <!-- Loading -->
+      @if (loading$ | async) {
+
+        <div class="loading">
+          Loading risk assessments...
+        </div>
+
+      } @else {
+
+        @if (assessments$ | async; as assessments) {
+
+          <!-- Empty State -->
+          @if (assessments.length === 0) {
+
+            <div class="empty">
+
+              <div class="empty-icon">◇</div>
+
+              <h3>No assessments yet</h3>
+
+              @if (canManageAssessments) {
+
+                <p>
+                  Create a risk assessment to get started.
+                </p>
+
+                <button
+                  class="primary-btn"
+                  type="button"
+                  (click)="openAssessmentForm()">
+                  Create Assessment
+                </button>
+
+              } @else {
+
+                <p>
+                  No risk assessments are available yet.
+                  Risk Engineers can create assessments here.
+                </p>
+
+              }
+
+            </div>
+
+          } @else {
+
+            <!-- Assessment Table -->
+            <div class="table-wrapper">
+
+              <table>
+
+                <thead>
+                  <tr>
+                    <th>Business</th>
+                    <th>Policy</th>
+                    <th>Risk Score</th>
+                    <th>Risk Level</th>
+                    <th>Recommendation</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  @for (
+                    assessment of assessments;
+                    track assessment.id
+                  ) {
+
+                    <tr>
+
+                      <td>
+                        #{{ assessment.businessId }}
+                      </td>
+
+                      <td>
+                        {{ assessment.policyId || '—' }}
+                      </td>
+
+                      <td>
+                        <strong>
+                          {{ assessment.riskScore }}
+                        </strong>/100
+                      </td>
+
+                      <td>
+                        <span
+                          class="risk-badge"
+                          [class]="riskClass(assessment.riskLevel)">
+                          {{ assessment.riskLevel }}
+                        </span>
+                      </td>
+
+                      <td>
+                        {{ assessment.recommendation || '—' }}
+                      </td>
+
+                      <td>
+                        {{
+                          assessment.createdAt
+                            | date:'dd MMM yyyy'
+                        }}
+                      </td>
+
+                    </tr>
+
+                  }
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          }
+
+        }
+
+      }
+
+    </section>
+
+  }
+
+
+  <!-- Risk Simulations -->
+  @if (canViewSimulations && activeTab === 'simulations') {
+
+    <section class="card">
+
+      <div class="card-header">
+
+        <div>
+          <h2>Risk Simulations</h2>
+
+          <p>
+            Model possible business risk scenarios.
+          </p>
+        </div>
+
+      </div>
+
+
+      <!-- Loading -->
+      @if (loading$ | async) {
+
+        <div class="loading">
+          Loading simulations...
+        </div>
+
+      } @else {
+
+        @if (simulations$ | async; as simulations) {
+
+          <!-- Empty State -->
+          @if (simulations.length === 0) {
+
+            <div class="empty">
+
+              <div class="empty-icon">◎</div>
+
+              <h3>No simulations yet</h3>
+
+              <p>
+                Create a scenario to see projected risk.
+              </p>
+
+              @if (canManageSimulations) {
+                <button
+                  class="primary-btn"
+                  type="button"
+                  (click)="openSimulationForm()">
+                  Create Simulation
+                </button>
+              }
+
+            </div>
+
+          } @else {
+
+            <!-- Simulation Cards -->
+            <div class="simulation-grid">
+
+              @for (
+                simulation of simulations;
+                track simulation.id
+              ) {
+
+                <article class="simulation-card">
+
+                  <div class="simulation-top">
+
+                    <div>
+
+                      <span class="scenario-label">
+                        SCENARIO
+                      </span>
+
+                      <h3>
+                        {{ simulation.scenarioName }}
+                      </h3>
+
+                    </div>
+
+                    <span class="status">
+                      {{ simulation.status }}
+                    </span>
+
+                  </div>
+
+
+                  <div class="simulation-score">
+
+                    <span>
+                      Projected Risk
+                    </span>
+
+                    <strong>
+                      {{
+                        simulation.projectedRiskScore ?? '—'
+                      }}
+                    </strong>
+
+                    @if (simulation.projectedRiskLevel) {
+                      <span
+                        class="risk-badge"
+                        [class]="riskClass(simulation.projectedRiskLevel)">
+                        {{ simulation.projectedRiskLevel }}
+                      </span>
+                    }
+
+                  </div>
+
+
+                  <p class="summary">
+                    {{
+                      simulation.resultSummary
+                        || 'No result summary available.'
+                    }}
+                  </p>
+
+
+                  <div class="simulation-footer">
+
+                    Business #{{ simulation.businessId }}
+
+                    <span>
+                      {{
+                        simulation.createdAt
+                          | date:'dd MMM yyyy'
+                      }}
+                    </span>
+
+                  </div>
+
+                </article>
+
+              }
+
+            </div>
+
+          }
+
+        }
+
+      }
+
+    </section>
+
+  }
+
+</div>
+
+
+<!-- Assessment Modal: Risk Engineers Only -->
+@if (canManageAssessments && showAssessmentForm) {
+
+  <div class="modal-backdrop">
+
+    <div class="modal">
+
+      <div class="modal-header">
+
+        <div>
+          <span class="eyebrow">
+            RISK ASSESSMENT
+          </span>
+
+          <h2>Create Assessment</h2>
+        </div>
+
+        <button
+          class="close-btn"
+          type="button"
+          (click)="closeAssessmentForm()">
+          ×
+        </button>
+
+      </div>
+
+
+      <form
+        [formGroup]="assessmentForm"
+        (ngSubmit)="createAssessment()">
+
+        <div class="form-grid">
+
+          <label>
+            Business ID
+
+            <input
+              type="number"
+              min="1"
+              formControlName="businessId"
+            />
+          </label>
+
+
+          <label>
+            Policy ID
+
+            <input
+              type="number"
+              formControlName="policyId"
+            />
+          </label>
+
+
+          <label>
+            Risk Score
+
+            <input
+              type="number"
+              min="0"
+              max="100"
+              formControlName="riskScore"
+            />
+          </label>
+
+
+          <label class="full">
+            Risk Factors
+
+            <textarea
+              rows="3"
+              formControlName="riskFactors">
+            </textarea>
+          </label>
+
+
+          <label class="full">
+            Recommendation
+
+            <textarea
+              rows="3"
+              formControlName="recommendation">
+            </textarea>
+          </label>
+
+        </div>
+
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="secondary-btn"
+            (click)="closeAssessmentForm()">
+            Cancel
+          </button>
+
+
+          <button
+            type="submit"
+            class="primary-btn"
+            [disabled]="assessmentForm.invalid">
+            Create Assessment
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+}
+
+
+<!-- Simulation Modal -->
+@if (canManageSimulations && showSimulationForm) {
+
+  <div class="modal-backdrop">
+
+    <div class="modal">
+
+      <div class="modal-header">
+
+        <div>
+          <span class="eyebrow">
+            RISK SIMULATION
+          </span>
+
+          <h2>New Simulation</h2>
+        </div>
+
+        <button
+          class="close-btn"
+          type="button"
+          (click)="closeSimulationForm()">
+          ×
+        </button>
+
+      </div>
+
+
+      <form
+        [formGroup]="simulationForm"
+        (ngSubmit)="createSimulation()">
+
+        <div class="form-grid">
+
+          <label>
+            Business ID
+
+            <input
+              type="number"
+              min="1"
+              formControlName="businessId"
+            />
+          </label>
+
+
+          <label>
+            Policy ID
+
+            <input
+              type="number"
+              formControlName="policyId"
+            />
+          </label>
+
+
+          <label class="full">
+            Scenario Name
+
+            <input
+              type="text"
+              formControlName="scenarioName"
+              placeholder="e.g. Revenue decline"
+            />
+          </label>
+
+
+          <label class="full">
+            Scenario Input
+
+            <textarea
+              rows="5"
+              formControlName="scenarioInput"
+              placeholder="Describe the scenario...">
+            </textarea>
+          </label>
+
+        </div>
+
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="secondary-btn"
+            (click)="closeSimulationForm()">
+            Cancel
+          </button>
+
+
+          <button
+            type="submit"
+            class="primary-btn"
+            [disabled]="simulationForm.invalid">
+            Run Simulation
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+}

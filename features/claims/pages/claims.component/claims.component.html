@@ -1,0 +1,1105 @@
+<div class="claims-page">
+
+  <!-- HEADER -->
+  <div class="page-header">
+
+    <div>
+      <p class="eyebrow">CLAIMS & RECOVERY</p>
+
+      <h1>
+        Claims Management
+      </h1>
+
+      <p class="subtitle">
+        Track insurance claims, approvals and recovery operations.
+      </p>
+    </div>
+
+    @if (canCreateClaim) {
+      <button
+        class="primary-btn"
+        type="button"
+        (click)="openCreateClaim()">
+
+        + New Claim
+
+      </button>
+    }
+
+  </div>
+
+
+  <!-- ALERTS -->
+
+  @if (error$ | async; as error) {
+
+    <div class="alert error-alert">
+      <span>⚠</span>
+      <span>{{ error }}</span>
+    </div>
+
+  }
+
+  @if (successMessage$ | async; as message) {
+
+    <div class="alert success-alert">
+      <span>✓</span>
+      <span>{{ message }}</span>
+    </div>
+
+  }
+
+
+  <!-- SUMMARY -->
+
+  @if (claims$ | async; as claims) {
+
+    <div class="summary-grid">
+
+      <div class="summary-card">
+        <span>Total Claims</span>
+        <strong>{{ claims.length }}</strong>
+      </div>
+
+      <div class="summary-card">
+        <span>Submitted</span>
+        <strong>
+          {{
+            claims
+              | json
+              | slice:0:0
+          }}
+        </strong>
+        <small>
+          {{
+            countStatus(claims, 'SUBMITTED')
+          }}
+        </small>
+      </div>
+
+      <div class="summary-card">
+        <span>Under Review</span>
+        <strong>
+          {{
+            countStatus(
+              claims,
+              'UNDER_REVIEW'
+            )
+          }}
+        </strong>
+      </div>
+
+      <div class="summary-card">
+        <span>Approved</span>
+        <strong>
+          {{
+            countStatus(
+              claims,
+              'APPROVED'
+            )
+          }}
+        </strong>
+      </div>
+
+      <div class="summary-card">
+        <span>Settled</span>
+        <strong>
+          {{
+            countStatus(
+              claims,
+              'SETTLED'
+            )
+          }}
+        </strong>
+      </div>
+
+    </div>
+
+
+    <!-- CLAIMS TABLE -->
+
+    <div class="content-card">
+
+      <div class="section-header">
+
+        <div>
+          <h2>Claims</h2>
+          <p>
+            Review and manage insurance claims.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="secondary-btn"
+          (click)="loadClaims()">
+
+          Refresh
+
+        </button>
+
+      </div>
+
+
+      @if (loading$ | async) {
+
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Loading claims...</span>
+        </div>
+
+      } @else if (claims.length === 0) {
+
+        <div class="empty-state">
+
+          <div class="empty-icon">
+            ◫
+          </div>
+
+          <h3>No claims found</h3>
+
+          <p>
+            Create a claim to start tracking
+            an insurance incident.
+          </p>
+
+        </div>
+
+      } @else {
+
+        <div class="table-wrapper">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Claim</th>
+                <th>Business</th>
+                <th>Policy</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Incident</th>
+                <th></th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              @for (
+                claim of claims;
+                track claim.id
+              ) {
+
+                <tr>
+
+                  <td>
+                    <strong>
+                      {{ claim.claimNumber }}
+                    </strong>
+
+                    <span class="subtext">
+                      #{{ claim.id }}
+                    </span>
+                  </td>
+
+                  <td>
+                    {{ claim.businessId }}
+                  </td>
+
+                  <td>
+                    {{ claim.policyId }}
+                  </td>
+
+                  <td>
+                    {{ claim.claimType }}
+                  </td>
+
+                  <td>
+                    <strong>
+                      {{
+                        formatCurrency(
+                          claim.claimedAmount
+                        )
+                      }}
+                    </strong>
+                  </td>
+
+                  <td>
+                    <span
+                      class="status-badge"
+                      [class]="
+                        getStatusClass(
+                          claim.status
+                        )
+                      ">
+
+                      {{ claim.status }}
+
+                    </span>
+                  </td>
+
+                  <td>
+                    {{ claim.incidentDate }}
+                  </td>
+
+                  <td>
+
+                    <div class="action-group">
+
+                      <button
+                        type="button"
+                        class="table-btn"
+                        (click)="viewClaim(claim)">
+
+                        View
+
+                      </button>
+
+                      @if (canManageClaims) {
+
+                        <button
+                          type="button"
+                          class="table-btn"
+                          (click)="
+                            openStatusModal(claim)
+                          ">
+
+                          Status
+
+                        </button>
+
+                      }
+
+                      @if (
+                        canManageRecovery &&
+                        claim.status === 'APPROVED'
+                      ) {
+
+                        <button
+                          type="button"
+                          class="table-btn"
+                          (click)="
+                            openRecoveryModal(claim)
+                          ">
+
+                          Recovery
+
+                        </button>
+
+                      }
+
+                    </div>
+
+                  </td>
+
+                </tr>
+
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      }
+
+    </div>
+
+  }
+
+
+  <!-- CLAIM DETAILS -->
+
+  @if (selectedClaim) {
+
+    <div class="details-card">
+
+      <div class="section-header">
+
+        <div>
+          <p class="eyebrow">
+            CLAIM DETAILS
+          </p>
+
+          <h2>
+            {{ selectedClaim.claimNumber }}
+          </h2>
+        </div>
+
+        <button
+          type="button"
+          class="secondary-btn"
+          (click)="closeClaimDetails()">
+
+          Close
+
+        </button>
+
+      </div>
+
+
+      <div class="details-grid">
+
+        <div>
+          <label>Claim ID</label>
+          <strong>
+            {{ selectedClaim.id }}
+          </strong>
+        </div>
+
+        <div>
+          <label>Business ID</label>
+          <strong>
+            {{ selectedClaim.businessId }}
+          </strong>
+        </div>
+
+        <div>
+          <label>Policy ID</label>
+          <strong>
+            {{ selectedClaim.policyId }}
+          </strong>
+        </div>
+
+        <div>
+          <label>Owner ID</label>
+          <strong>
+            {{ selectedClaim.ownerId }}
+          </strong>
+        </div>
+
+        <div>
+          <label>Claim Type</label>
+          <strong>
+            {{ selectedClaim.claimType }}
+          </strong>
+        </div>
+
+        <div>
+          <label>Status</label>
+          <span
+            class="status-badge"
+            [class]="
+              getStatusClass(
+                selectedClaim.status
+              )
+            ">
+
+            {{ selectedClaim.status }}
+
+          </span>
+        </div>
+
+        <div>
+          <label>Claimed Amount</label>
+          <strong>
+            {{
+              formatCurrency(
+                selectedClaim.claimedAmount
+              )
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <label>Approved Amount</label>
+          <strong>
+            {{
+              formatCurrency(
+                selectedClaim.approvedAmount
+              )
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <label>Incident Date</label>
+          <strong>
+            {{ selectedClaim.incidentDate }}
+          </strong>
+        </div>
+
+        <div>
+          <label>Reported Date</label>
+          <strong>
+            {{ selectedClaim.reportedDate }}
+          </strong>
+        </div>
+
+        <div>
+          <label>Assigned Adjuster</label>
+          <strong>
+            {{
+              selectedClaim.assignedAdjusterId
+              || 'Not assigned'
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <label>Description</label>
+          <strong>
+            {{
+              selectedClaim.description
+              || 'No description'
+            }}
+          </strong>
+        </div>
+
+      </div>
+
+      <!-- CLAIM DOCUMENT UPLOAD -->
+      <div class="documents-section">
+
+        <div class="section-header">
+          <div>
+            <h3>Claim Documents</h3>
+            <p>Upload and download documents associated with this claim.</p>
+          </div>
+        </div>
+
+        <div class="document-upload">
+          <div class="file-input-wrapper">
+            <label for="claimDocument">Choose a document</label>
+
+            <input
+              id="claimDocument"
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,.docx"
+              (change)="onFileSelected($event)"
+            />
+
+            <small>Allowed: PDF, PNG, JPG, JPEG, DOCX. Maximum size: 10 MB.</small>
+          </div>
+
+          @if (selectedFile) {
+            <p class="selected-file">
+              Selected: {{ selectedFile.name }}
+            </p>
+          }
+
+          <button
+            type="button"
+            class="primary-btn"
+            [disabled]="!selectedFile || uploading"
+            (click)="uploadDocument()">
+            {{ uploading ? 'Uploading...' : 'Upload Document' }}
+          </button>
+        </div>
+
+        @if (uploadMessage) {
+          <div class="document-message success">
+            {{ uploadMessage }}
+          </div>
+        }
+
+        @if (uploadError) {
+          <div class="document-message error">
+            {{ uploadError }}
+          </div>
+        }
+
+        <div class="uploaded-documents">
+          <h4>Uploaded Documents</h4>
+
+          @if (uploadedDocuments.length === 0) {
+            <div class="mini-empty">
+              No documents uploaded in this session.
+            </div>
+          } @else {
+            @for (filename of uploadedDocuments; track filename) {
+              <div class="document-item">
+                <span>{{ filename }}</span>
+
+                <button
+                  type="button"
+                  class="table-btn"
+                  (click)="downloadDocument(filename)">
+                  Download
+                </button>
+              </div>
+            }
+          }
+        </div>
+
+      </div>
+
+
+      <div class="recovery-section">
+
+        <div class="section-header">
+
+          <div>
+            <h3>Recovery Records</h3>
+            <p>
+              Recovery activity associated with this claim.
+            </p>
+          </div>
+
+          @if (
+            canManageRecovery &&
+            selectedClaim.status === 'APPROVED'
+          ) {
+
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="
+                openRecoveryModal(
+                  selectedClaim
+                )
+              ">
+
+              + Add Recovery
+
+            </button>
+
+          }
+
+        </div>
+
+
+        @if (recoveries$ | async; as recoveries) {
+
+          @if (recoveries.length === 0) {
+
+            <div class="mini-empty">
+              No recovery records found.
+            </div>
+
+          } @else {
+
+            <div class="recovery-list">
+
+              @for (
+                recovery of recoveries;
+                track recovery.id
+              ) {
+
+                <div class="recovery-item">
+
+                  <div>
+                    <strong>
+                      {{
+                        formatCurrency(
+                          recovery.recoveryAmount
+                        )
+                      }}
+                    </strong>
+
+                    <span>
+                      {{
+                        recovery.recoverySource
+                        || 'Unknown source'
+                      }}
+                    </span>
+                  </div>
+
+                  <div>
+
+                    <span
+                      class="status-badge"
+                      [class]="
+                        getStatusClass(
+                          recovery.status
+                        )
+                      ">
+
+                      {{ recovery.status }}
+
+                    </span>
+
+                    @if (canManageRecovery) {
+
+                      <button
+                        type="button"
+                        class="table-btn"
+                        (click)="
+                          openRecoveryStatus(
+                            recovery
+                          )
+                        ">
+
+                        Update
+
+                      </button>
+
+                    }
+
+                  </div>
+
+                </div>
+
+              }
+
+            </div>
+
+          }
+
+        }
+
+      </div>
+
+    </div>
+
+  }
+
+
+  <!-- CREATE CLAIM MODAL -->
+
+  @if (showCreateClaim) {
+
+    <div class="modal-backdrop">
+
+      <div class="modal">
+
+        <div class="modal-header">
+
+          <div>
+            <p class="eyebrow">
+              NEW CLAIM
+            </p>
+
+            <h2>
+              Create Claim
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            class="close-btn"
+            (click)="closeCreateClaim()">
+
+            ×
+
+          </button>
+
+        </div>
+
+
+        <form
+          [formGroup]="claimForm"
+          (ngSubmit)="submitClaim()">
+
+          <div class="form-grid">
+
+            <div class="field">
+              <label>Business ID</label>
+
+              <input
+                type="number"
+                formControlName="businessId"
+                placeholder="Business ID" />
+            </div>
+
+            <div class="field">
+              <label>Policy ID</label>
+
+              <input
+                type="number"
+                formControlName="policyId"
+                placeholder="Policy ID" />
+            </div>
+
+            <div class="field">
+              <label>Claim Number</label>
+
+              <input
+                type="text"
+                formControlName="claimNumber"
+                placeholder="CLM-2026-001" />
+            </div>
+
+            <div class="field">
+              <label>Claim Type</label>
+
+              <select formControlName="claimType">
+
+                @for (
+                  type of claimTypes;
+                  track type
+                ) {
+
+                  <option [value]="type">
+                    {{ type }}
+                  </option>
+
+                }
+
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Incident Date</label>
+
+              <input
+                type="date"
+                formControlName="incidentDate" />
+            </div>
+
+            <div class="field">
+              <label>Reported Date</label>
+
+              <input
+                type="date"
+                formControlName="reportedDate" />
+            </div>
+
+            <div class="field">
+              <label>Claimed Amount</label>
+
+              <input
+                type="number"
+                step="0.01"
+                formControlName="claimedAmount"
+                placeholder="0.00" />
+            </div>
+
+            <div class="field full">
+              <label>Description</label>
+
+              <textarea
+                rows="4"
+                formControlName="description"
+                placeholder="Describe the incident...">
+              </textarea>
+            </div>
+
+          </div>
+
+
+          <div class="modal-actions">
+
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="closeCreateClaim()">
+
+              Cancel
+
+            </button>
+
+            <button
+              type="submit"
+              class="primary-btn"
+              [disabled]="
+                (creating$ | async)
+              ">
+
+              @if (creating$ | async) {
+                Creating...
+              } @else {
+                Create Claim
+              }
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  }
+
+
+  <!-- STATUS MODAL -->
+
+  @if (showStatusModal) {
+
+    <div class="modal-backdrop">
+
+      <div class="modal small-modal">
+
+        <div class="modal-header">
+
+          <div>
+            <p class="eyebrow">
+              CLAIM STATUS
+            </p>
+
+            <h2>
+              Update Claim
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            class="close-btn"
+            (click)="closeStatusModal()">
+
+            ×
+
+          </button>
+
+        </div>
+
+
+        <form
+          [formGroup]="statusForm"
+          (ngSubmit)="updateClaimStatus()">
+
+          <div class="field">
+
+            <label>Status</label>
+
+            <select formControlName="status">
+
+              @for (
+                status of claimStatuses;
+                track status
+              ) {
+
+                <option [value]="status">
+                  {{ status }}
+                </option>
+
+              }
+
+            </select>
+
+          </div>
+
+
+          <div class="field">
+
+            <label>Approved Amount</label>
+
+            <input
+              type="number"
+              step="0.01"
+              formControlName="approvedAmount" />
+
+          </div>
+
+
+          <div class="field">
+
+            <label>Assigned Adjuster ID</label>
+
+            <input
+              type="number"
+              formControlName="assignedAdjusterId" />
+
+          </div>
+
+
+          <div class="modal-actions">
+
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="closeStatusModal()">
+
+              Cancel
+
+            </button>
+
+            <button
+              type="submit"
+              class="primary-btn">
+
+              Update Status
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  }
+
+
+  <!-- RECOVERY MODAL -->
+
+  @if (showRecoveryModal) {
+
+    <div class="modal-backdrop">
+
+      <div class="modal small-modal">
+
+        <div class="modal-header">
+
+          <div>
+            <p class="eyebrow">
+              RECOVERY
+            </p>
+
+            <h2>
+              Create Recovery
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            class="close-btn"
+            (click)="closeRecoveryModal()">
+
+            ×
+
+          </button>
+
+        </div>
+
+
+        <form
+          [formGroup]="recoveryForm"
+          (ngSubmit)="createRecovery()">
+
+          <div class="field">
+
+            <label>Recovery Amount</label>
+
+            <input
+              type="number"
+              step="0.01"
+              formControlName="recoveryAmount" />
+
+          </div>
+
+
+          <div class="field">
+
+            <label>Recovery Source</label>
+
+            <input
+              type="text"
+              formControlName="recoverySource"
+              placeholder="Third party / salvage / insurer..." />
+
+          </div>
+
+
+          <div class="field">
+
+            <label>Description</label>
+
+            <textarea
+              rows="4"
+              formControlName="description">
+            </textarea>
+
+          </div>
+
+
+          <div class="modal-actions">
+
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="closeRecoveryModal()">
+
+              Cancel
+
+            </button>
+
+            <button
+              type="submit"
+              class="primary-btn">
+
+              Create Recovery
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  }
+
+
+  <!-- RECOVERY STATUS -->
+
+  @if (selectedRecovery) {
+
+    <div class="modal-backdrop">
+
+      <div class="modal small-modal">
+
+        <div class="modal-header">
+
+          <div>
+            <p class="eyebrow">
+              RECOVERY STATUS
+            </p>
+
+            <h2>
+              Update Recovery
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            class="close-btn"
+            (click)="selectedRecovery = null">
+
+            ×
+
+          </button>
+
+        </div>
+
+
+        <form
+          [formGroup]="recoveryStatusForm"
+          (ngSubmit)="updateRecoveryStatus()">
+
+          <div class="field">
+
+            <label>Status</label>
+
+            <input
+              type="text"
+              formControlName="status"
+              placeholder="Enter RecoveryStatus enum value" />
+
+            <small>
+              Enter the exact backend
+              RecoveryStatus enum value.
+            </small>
+
+          </div>
+
+
+          <div class="modal-actions">
+
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="selectedRecovery = null">
+
+              Cancel
+
+            </button>
+
+            <button
+              type="submit"
+              class="primary-btn">
+
+              Update
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  }
+
+</div>

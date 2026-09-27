@@ -1,0 +1,602 @@
+<section class="page">
+
+  <div class="page-header">
+
+    <div>
+      <div class="eyebrow">
+        UNDERWRITING & POLICY
+      </div>
+
+      <h1>Policies</h1>
+
+      <p>
+        Create, manage and review insurance policies
+        across your organization.
+      </p>
+    </div>
+
+    @if (canCreate()) {
+      <button
+        class="primary-btn"
+        type="button"
+        (click)="openCreate()">
+        <span>＋</span>
+        Create Policy
+      </button>
+    }
+
+  </div>
+
+
+  @if (successMessage$ | async; as message) {
+
+    <div class="alert success">
+      <span>✓</span>
+      {{ message }}
+    </div>
+
+  }
+
+
+  @if (error$ | async; as error) {
+
+    <div class="alert error">
+      <span>!</span>
+      {{ error }}
+    </div>
+
+  }
+
+
+  <div class="summary-grid">
+
+    <div class="summary-card">
+      <div class="summary-icon">▣</div>
+
+      <div>
+        <span>Total Policies</span>
+
+        <strong>
+          {{ (policies$ | async)?.length ?? 0 }}
+        </strong>
+      </div>
+    </div>
+
+
+    <div class="summary-card">
+      <div class="summary-icon draft">◷</div>
+
+      <div>
+        <span>Draft</span>
+
+        <strong>
+          {{
+            ((policies$ | async) ?? [])
+              | statusCount:'DRAFT'
+          }}
+        </strong>
+      </div>
+    </div>
+
+
+    <div class="summary-card">
+      <div class="summary-icon submitted">↗</div>
+
+      <div>
+        <span>Submitted</span>
+
+        <strong>
+          {{
+            ((policies$ | async) ?? [])
+              | statusCount:'SUBMITTED'
+          }}
+        </strong>
+      </div>
+    </div>
+
+
+    <div class="summary-card">
+      <div class="summary-icon active">✓</div>
+
+      <div>
+        <span>Active</span>
+
+        <strong>
+          {{
+            ((policies$ | async) ?? [])
+              | statusCount:'ACTIVE'
+          }}
+        </strong>
+      </div>
+    </div>
+
+  </div>
+
+
+  <div class="content-card">
+
+    <div class="card-header">
+
+      <div>
+        <h2>Policy Portfolio</h2>
+
+        <p>
+          Review policy information and available actions.
+        </p>
+      </div>
+
+      <span class="role-chip">
+        {{ currentRole || 'USER' }}
+      </span>
+
+    </div>
+
+
+    @if (loading$ | async) {
+
+      <div class="loading">
+        <div class="spinner"></div>
+        <span>Loading policies...</span>
+      </div>
+
+    } @else {
+
+      @if ((policies$ | async)?.length === 0) {
+
+        <div class="empty-state">
+
+          <div class="empty-icon">▣</div>
+
+          <h3>No policies yet</h3>
+
+          <p>
+            Create your first policy to start managing
+            underwriting information.
+          </p>
+
+          @if (canCreate()) {
+            <button
+              class="secondary-btn"
+              type="button"
+              (click)="openCreate()">
+              Create your first policy
+            </button>
+          }
+
+        </div>
+
+      } @else {
+
+        <div class="table-wrapper">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Policy</th>
+                <th>Business</th>
+                <th>Coverage</th>
+                <th>Premium</th>
+                <th>Period</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              @for (
+                policy of (policies$ | async) ?? [];
+                track policy.id
+              ) {
+
+                <tr>
+
+                  <td>
+                    <div class="policy-name">
+                      <strong>
+                        {{ policy.policyNumber }}
+                      </strong>
+
+                      <span>
+                        {{ policy.policyType }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td>
+                    #{{ policy.businessId }}
+                  </td>
+
+                  <td>
+                    {{ policy.coverageAmount | currency:'INR':'symbol':'1.0-0' }}
+                  </td>
+
+                  <td>
+                    {{ policy.premiumAmount | currency:'INR':'symbol':'1.0-0' }}
+                  </td>
+
+                  <td>
+                    <div class="date-range">
+                      <span>
+                        {{ policy.startDate | date:'dd MMM yyyy' }}
+                      </span>
+
+                      <span>→</span>
+
+                      <span>
+                        {{ policy.endDate | date:'dd MMM yyyy' }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td>
+                    <span
+                      class="status"
+                      [class]="getStatusClass(policy.status)">
+                      {{ policy.status.replace('_', ' ') }}
+                    </span>
+                  </td>
+
+                  <td>
+
+                    <div class="actions">
+
+                      <button
+                        class="icon-btn"
+                        type="button"
+                        title="View"
+                        (click)="viewPolicy(policy)">
+                        View
+                      </button>
+
+                      @if (canEdit(policy)) {
+                        <button
+                          class="icon-btn"
+                          type="button"
+                          (click)="openEdit(policy)">
+                          Edit
+                        </button>
+                      }
+
+                      @if (canSubmit(policy)) {
+                        <button
+                          class="action-btn"
+                          type="button"
+                          (click)="submit(policy)">
+                          Submit
+                        </button>
+                      }
+
+                    </div>
+
+                  </td>
+
+                </tr>
+
+
+                @if (selectedPolicy?.id === policy.id) {
+
+                  <tr class="details-row">
+
+                    <td colspan="7">
+
+                      <div class="policy-details">
+
+                        <div class="detail-heading">
+
+                          <div>
+                            <span class="eyebrow">
+                              POLICY DETAILS
+                            </span>
+
+                            <h3>
+                              {{ policy.policyNumber }}
+                            </h3>
+                          </div>
+
+                          <button
+                            type="button"
+                            class="close-detail"
+                            (click)="selectedPolicy = null">
+                            ×
+                          </button>
+
+                        </div>
+
+
+                        <div class="detail-grid">
+
+                          <div>
+                            <label>Policy ID</label>
+                            <strong>#{{ policy.id }}</strong>
+                          </div>
+
+                          <div>
+                            <label>Business ID</label>
+                            <strong>#{{ policy.businessId }}</strong>
+                          </div>
+
+                          <div>
+                            <label>Owner ID</label>
+                            <strong>#{{ policy.ownerId }}</strong>
+                          </div>
+
+                          <div>
+                            <label>Policy Type</label>
+                            <strong>{{ policy.policyType }}</strong>
+                          </div>
+
+                          <div>
+                            <label>Coverage</label>
+                            <strong>
+                              {{ policy.coverageAmount | currency:'INR':'symbol':'1.0-0' }}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <label>Premium</label>
+                            <strong>
+                              {{ policy.premiumAmount | currency:'INR':'symbol':'1.0-0' }}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <label>Created</label>
+                            <strong>
+                              {{ policy.createdAt | date:'dd MMM yyyy, hh:mm a' }}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <label>Updated</label>
+                            <strong>
+                              {{ policy.updatedAt | date:'dd MMM yyyy, hh:mm a' }}
+                            </strong>
+                          </div>
+
+                        </div>
+
+
+                        @if (policy.description) {
+
+                          <div class="description">
+                            <label>Description</label>
+                            <p>{{ policy.description }}</p>
+                          </div>
+
+                        }
+
+
+                        @if (canChangeStatus()) {
+
+                          <div class="status-management">
+
+                            <div>
+                              <label>Underwriting Status</label>
+
+                              <p>
+                                Change the policy workflow status.
+                              </p>
+                            </div>
+
+                            <select
+                              [value]="policy.status"
+                              (change)="changeStatus(
+                                policy,
+                                $any($event.target).value
+                              )">
+
+                              @for (status of statuses; track status) {
+                                <option [value]="status">
+                                  {{ status.replace('_', ' ') }}
+                                </option>
+                              }
+
+                            </select>
+
+                          </div>
+
+                        }
+
+                      </div>
+
+                    </td>
+
+                  </tr>
+
+                }
+
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      }
+
+    }
+
+  </div>
+
+</section>
+
+
+@if (showForm) {
+
+  <div
+    class="modal-backdrop"
+    (click)="closeForm()">
+
+    <div
+      class="modal"
+      (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+
+        <div>
+          <span class="eyebrow">
+            {{ editingPolicy ? 'UPDATE POLICY' : 'NEW POLICY' }}
+          </span>
+
+          <h2>
+            {{ editingPolicy ? 'Edit Policy' : 'Create Policy' }}
+          </h2>
+        </div>
+
+        <button
+          type="button"
+          class="modal-close"
+          (click)="closeForm()">
+          ×
+        </button>
+
+      </div>
+
+
+      <form
+        [formGroup]="policyForm"
+        (ngSubmit)="savePolicy()">
+
+
+        <div class="form-grid">
+
+          <div class="field">
+
+            <label>Business ID *</label>
+
+            <input
+              type="number"
+              formControlName="businessId"
+              placeholder="Enter business ID">
+
+            @if (
+              policyForm.controls.businessId.touched &&
+              policyForm.controls.businessId.invalid
+            ) {
+              <small>
+                Valid business ID is required.
+              </small>
+            }
+
+          </div>
+
+
+          <div class="field">
+
+            <label>Policy Number *</label>
+
+            <input
+              type="text"
+              formControlName="policyNumber"
+              placeholder="POL-2026-001">
+
+          </div>
+
+
+          <div class="field">
+
+            <label>Policy Type *</label>
+
+            <input
+              type="text"
+              formControlName="policyType"
+              placeholder="Property Insurance">
+
+          </div>
+
+
+          <div class="field">
+
+            <label>Coverage Amount *</label>
+
+            <input
+              type="number"
+              formControlName="coverageAmount"
+              min="0.01"
+              step="0.01"
+              placeholder="500000">
+
+          </div>
+
+
+          <div class="field">
+
+            <label>Premium Amount *</label>
+
+            <input
+              type="number"
+              formControlName="premiumAmount"
+              min="0.01"
+              step="0.01"
+              placeholder="25000">
+
+          </div>
+
+
+          <div class="field">
+
+            <label>Start Date *</label>
+
+            <input
+              type="date"
+              formControlName="startDate">
+
+          </div>
+
+
+          <div class="field">
+
+            <label>End Date *</label>
+
+            <input
+              type="date"
+              formControlName="endDate">
+
+          </div>
+
+
+          <div class="field full">
+
+            <label>Description</label>
+
+            <textarea
+              rows="4"
+              formControlName="description"
+              placeholder="Add policy details, coverage notes or underwriting information...">
+            </textarea>
+
+          </div>
+
+        </div>
+
+
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="cancel-btn"
+            (click)="closeForm()">
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="primary-btn"
+            [disabled]="policyForm.invalid">
+
+            {{ editingPolicy ? 'Save Changes' : 'Create Policy' }}
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+}

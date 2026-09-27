@@ -1,0 +1,56 @@
+<div class="heading">
+  <h2>Create your account</h2>
+  <p>Start managing your business risk with RiskTwin.</p>
+</div>
+
+@if (error$ | async; as error) {
+  <div class="error">⚠ {{ error }}</div>
+}
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <label>
+    Full name
+    <input
+      formControlName="name"
+      placeholder="Your name"
+    />
+  </label>
+
+  <label>
+    Business email
+    <input
+      type="email"
+      formControlName="email"
+      placeholder="you@company.com"
+    />
+  </label>
+
+  <label>
+    Password
+    <input
+      type="password"
+      formControlName="password"
+      placeholder="Minimum 6 characters"
+    />
+  </label>
+
+  <button
+    type="submit"
+    [disabled]="form.invalid || (loading$ | async)"
+  >
+    @if (loading$ | async) {
+      Creating account...
+    } @else {
+      Create account →
+    }
+  </button>
+</form>
+
+<p class="role-note">
+  ◈ New registrations are created as Business Owners.
+</p>
+
+<div class="login-link">
+  Already have an account?
+  <a routerLink="/login">Sign in</a>
+</div>

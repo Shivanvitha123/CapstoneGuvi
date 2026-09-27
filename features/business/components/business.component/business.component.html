@@ -1,0 +1,660 @@
+<app-page-header
+  title="Business Profile"
+  subtitle="Manage your organisation information and business details."
+>
+  @if (!isReviewer) {
+    <button
+      class="primary-btn"
+      type="button"
+      (click)="openCreate()"
+    >
+      + Add Business
+    </button>
+  }
+</app-page-header>
+
+<!-- BUSINESS ERRORS -->
+@if (error$ | async; as error) {
+  <div class="error-box">
+    ⚠ {{ error }}
+  </div>
+}
+
+<!-- DELETION SUCCESS -->
+@if (deletionSuccess) {
+  <div class="success-box">
+    {{ deletionSuccess }}
+  </div>
+}
+
+<!-- DELETION ERROR -->
+@if (deletionError) {
+  <div class="error-box">
+    ⚠ {{ deletionError }}
+  </div>
+}
+
+<!-- BUSINESS LOADING -->
+@if (loading$ | async) {
+  <div class="loading">
+    <div class="spinner"></div>
+    Loading business profiles...
+  </div>
+} @else {
+
+  <!-- UNDERWRITER / ADMIN BUSINESS LIST -->
+  @if (isReviewer) {
+    @if (summaries$ | async; as summaries) {
+      @if (summaries.length === 0) {
+        <section class="empty">
+          <div class="empty-icon">◇</div>
+
+          <h2>No businesses found</h2>
+
+          <p>
+            There are currently no business profiles available.
+          </p>
+        </section>
+      } @else {
+        <section class="business-grid">
+          @for (business of summaries; track business.id) {
+            <article class="business-card">
+
+              <div class="card-top">
+                <div class="business-icon">
+                  ◇
+                </div>
+
+                <span class="status">
+                  {{ business.status }}
+                </span>
+              </div>
+
+              <h2>{{ business.businessName }}</h2>
+
+              <div class="details">
+                <div>
+                  <span>Business ID</span>
+                  <strong>{{ business.id }}</strong>
+                </div>
+
+                <div>
+                  <span>Owner ID</span>
+                  <strong>{{ business.ownerId }}</strong>
+                </div>
+
+                <div>
+                  <span>Industry</span>
+                  <strong>{{ business.industry }}</strong>
+                </div>
+
+                <div>
+                  <span>Status</span>
+                  <strong>{{ business.status }}</strong>
+                </div>
+              </div>
+
+            </article>
+          }
+        </section>
+      }
+    }
+  } @else {
+
+    <!-- BUSINESS OWNER BUSINESS LIST -->
+    @if (businesses$ | async; as businesses) {
+      @if (businesses.length === 0) {
+        <section class="empty">
+          <div class="empty-icon">◇</div>
+
+          <h2>No business profile yet</h2>
+
+          <p>
+            Add your organisation details to start using
+            RiskTwin's insurance intelligence features.
+          </p>
+
+          <button
+            class="primary-btn"
+            type="button"
+            (click)="openCreate()"
+          >
+            Create Business Profile
+          </button>
+        </section>
+      } @else {
+        <section class="business-grid">
+          @for (business of businesses; track business.id) {
+            <article class="business-card">
+
+              <div class="card-top">
+                <div class="business-icon">
+                  ◇
+                </div>
+
+                <span class="status">
+                  {{ business.status }}
+                </span>
+              </div>
+
+              <h2>{{ business.businessName }}</h2>
+
+              <p class="industry">
+                {{ business.industry }}
+              </p>
+
+              <div class="details">
+                <div>
+                  <span>Business Type</span>
+                  <strong>
+                    {{ business.businessType }}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Employees</span>
+                  <strong>
+                    {{ business.employeeCount }}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Annual Revenue</span>
+                  <strong>
+                    {{ business.annualRevenue | currency:'INR':'symbol':'1.0-0' }}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Location</span>
+                  <strong>
+                    {{ business.city }}, {{ business.state }}
+                  </strong>
+                </div>
+              </div>
+
+              <div class="card-footer">
+                <small>
+                  Registration:
+                  {{ business.registrationNumber }}
+                </small>
+
+                <button
+                  type="button"
+                  (click)="edit(business.id)"
+                >
+                  Edit
+                </button>
+
+                @if (hasPendingRequest(business.id)) {
+                  <button
+                    type="button"
+                    disabled
+                  >
+                    Request Pending
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    (click)="openDeletionForm(business.id)"
+                  >
+                    Request Deletion
+                  </button>
+                }
+              </div>
+
+            </article>
+          }
+        </section>
+      }
+    }
+  }
+}
+
+<!-- DELETION REQUESTS -->
+<section class="deletion-requests">
+
+  <h2>
+    @if (canReviewDeletionRequests) {
+      Pending Deletion Requests
+    } @else {
+      My Deletion Requests
+    }
+  </h2>
+
+  <!-- LOADING -->
+  @if (deletionLoading) {
+    <div class="loading">
+      <div class="spinner"></div>
+      Loading deletion requests...
+    </div>
+  }
+
+  <!-- EMPTY LIST -->
+  @else if (deletionRequests.length === 0) {
+    <div class="empty">
+      @if (canReviewDeletionRequests) {
+        <p>
+          There are no pending deletion requests.
+        </p>
+      } @else {
+        <p>
+          You haven't submitted any deletion requests.
+        </p>
+      }
+    </div>
+  }
+
+  <!-- REQUEST LIST -->
+  @else {
+    <div class="business-grid">
+
+      @for (
+        request of deletionRequests;
+        track request.id
+      ) {
+        <article class="business-card deletion-request-card">
+
+          <div class="card-top">
+            <h3>
+              Request #{{ request.id }}
+            </h3>
+
+            <span class="status">
+              {{ request.status }}
+            </span>
+          </div>
+
+          <div class="details">
+
+            <div>
+              <span>Business ID</span>
+              <strong>
+                {{ request.businessId }}
+              </strong>
+            </div>
+
+            @if (canReviewDeletionRequests) {
+              <div>
+                <span>Owner ID</span>
+                <strong>
+                  {{ request.ownerId }}
+                </strong>
+              </div>
+            }
+
+            <div>
+              <span>Reason</span>
+              <strong>
+                {{ request.reason || 'No reason provided' }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Status</span>
+              <strong>
+                {{ request.status }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Submitted</span>
+              <strong>
+                {{ request.createdAt | date:'medium' }}
+              </strong>
+            </div>
+
+            @if (request.reviewedAt) {
+              <div>
+                <span>Reviewed</span>
+                <strong>
+                  {{ request.reviewedAt | date:'medium' }}
+                </strong>
+              </div>
+            }
+
+            @if (request.reviewerId) {
+              <div>
+                <span>Reviewer ID</span>
+                <strong>
+                  {{ request.reviewerId }}
+                </strong>
+              </div>
+            }
+
+          </div>
+
+          <!-- REVIEW ACTIONS: UNDERWRITER / ADMIN -->
+          @if (
+            canReviewDeletionRequests &&
+            request.status.toUpperCase() === 'PENDING'
+          ) {
+            <div class="card-footer review-actions">
+
+              <button
+                type="button"
+                class="primary-btn"
+                [disabled]="isReviewing(request.id)"
+                (click)="approveDeletionRequest(request)"
+              >
+                @if (isReviewing(request.id)) {
+                  Processing...
+                } @else {
+                  Approve
+                }
+              </button>
+
+              <button
+                type="button"
+                class="secondary-btn"
+                [disabled]="isReviewing(request.id)"
+                (click)="rejectDeletionRequest(request)"
+              >
+                @if (isReviewing(request.id)) {
+                  Processing...
+                } @else {
+                  Reject
+                }
+              </button>
+
+            </div>
+          }
+
+        </article>
+      }
+
+    </div>
+  }
+
+  <!-- MANUAL REFRESH -->
+  <div class="form-actions">
+    <button
+      type="button"
+      class="secondary-btn"
+      [disabled]="deletionLoading"
+      (click)="loadDeletionRequests()"
+    >
+      Refresh Requests
+    </button>
+  </div>
+
+</section>
+
+<!-- CREATE / EDIT BUSINESS MODAL -->
+@if (showForm && !isReviewer) {
+  <div class="modal-backdrop">
+    <section class="modal">
+
+      <div class="modal-header">
+        <div>
+          <h2>
+            {{ editingId ? 'Edit Business' : 'Create Business' }}
+          </h2>
+
+          <p>
+            Enter accurate information about your organisation.
+          </p>
+        </div>
+
+        <button
+          class="close"
+          type="button"
+          (click)="closeForm()"
+        >
+          ×
+        </button>
+      </div>
+
+      <form
+        [formGroup]="form"
+        (ngSubmit)="save()"
+      >
+
+        <div class="section-title">
+          Company Information
+        </div>
+
+        <div class="form-grid">
+
+          <label>
+            Business Name
+            <input
+              formControlName="businessName"
+              placeholder="Example Technologies Pvt Ltd"
+            />
+          </label>
+
+          <label>
+            Registration Number
+            <input
+              formControlName="registrationNumber"
+              placeholder="Registration number"
+            />
+          </label>
+
+          <label>
+            Business Type
+            <input
+              formControlName="businessType"
+              placeholder="Private Limited"
+            />
+          </label>
+
+          <label>
+            Industry
+            <input
+              formControlName="industry"
+              placeholder="Technology"
+            />
+          </label>
+
+        </div>
+
+        <div class="section-title">
+          Location & Contact
+        </div>
+
+        <div class="form-grid">
+
+          <label class="wide">
+            Address
+            <input
+              formControlName="address"
+              placeholder="Business address"
+            />
+          </label>
+
+          <label>
+            City
+            <input
+              formControlName="city"
+              placeholder="Hyderabad"
+            />
+          </label>
+
+          <label>
+            State
+            <input
+              formControlName="state"
+              placeholder="Telangana"
+            />
+          </label>
+
+          <label>
+            Postal Code
+            <input
+              formControlName="postalCode"
+              placeholder="500001"
+            />
+          </label>
+
+          <label>
+            Country
+            <input
+              formControlName="country"
+            />
+          </label>
+
+          <label>
+            Contact Email
+            <input
+              type="email"
+              formControlName="contactEmail"
+              placeholder="business@example.com"
+            />
+          </label>
+
+          <label>
+            Contact Phone
+            <input
+              formControlName="contactPhone"
+              placeholder="+91..."
+            />
+          </label>
+
+        </div>
+
+        <div class="section-title">
+          Business Metrics
+        </div>
+
+        <div class="form-grid">
+
+          <label>
+            Annual Revenue
+            <input
+              type="number"
+              formControlName="annualRevenue"
+              min="0"
+            />
+          </label>
+
+          <label>
+            Employee Count
+            <input
+              type="number"
+              formControlName="employeeCount"
+              min="1"
+            />
+          </label>
+
+          <label>
+            Established Date
+            <input
+              type="date"
+              formControlName="establishedDate"
+            />
+          </label>
+
+        </div>
+
+        <div class="form-actions">
+
+          <button
+            type="button"
+            class="secondary-btn"
+            (click)="closeForm()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="primary-btn"
+            [disabled]="form.invalid || (saving$ | async)"
+          >
+            @if (saving$ | async) {
+              Saving...
+            } @else {
+              {{ editingId ? 'Save Changes' : 'Create Profile' }}
+            }
+          </button>
+
+        </div>
+
+      </form>
+    </section>
+  </div>
+}
+
+<!-- BUSINESS DELETION REQUEST MODAL -->
+@if (showDeletionForm && !isReviewer) {
+  <div class="modal-backdrop">
+    <section class="modal">
+
+      <div class="modal-header">
+        <div>
+          <h2>
+            Request Business Deletion
+          </h2>
+
+          <p>
+            Your request will be sent to an underwriter for review.
+          </p>
+        </div>
+
+        <button
+          class="close"
+          type="button"
+          (click)="closeDeletionForm()"
+        >
+          ×
+        </button>
+      </div>
+
+      <form
+        [formGroup]="deletionForm"
+        (ngSubmit)="submitDeletionRequest()"
+      >
+
+        <label>
+          Reason for deletion
+
+          <textarea
+            formControlName="reason"
+            rows="5"
+            maxlength="1000"
+            placeholder="Explain why you want to delete this business..."
+          ></textarea>
+        </label>
+
+        @if (
+          deletionForm.controls.reason.invalid &&
+          deletionForm.controls.reason.touched
+        ) {
+          <p class="error-box">
+            Please enter a reason (maximum 1000 characters).
+          </p>
+        }
+
+        <div class="form-actions">
+
+          <button
+            type="button"
+            class="secondary-btn"
+            (click)="closeDeletionForm()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="primary-btn"
+            [disabled]="
+              deletionForm.invalid ||
+              deletionSubmitting
+            "
+          >
+            @if (deletionSubmitting) {
+              Submitting...
+            } @else {
+              Submit Request
+            }
+          </button>
+
+        </div>
+
+      </form>
+    </section>
+  </div>
+}
