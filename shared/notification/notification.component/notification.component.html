@@ -1,0 +1,14 @@
+@if (service.current(); as notification) {
+  <div
+    class="toast"
+    [class.error]="notification.type === 'error'"
+    [class.success]="notification.type === 'success'"
+  >
+    <span>
+      {{ notification.type === 'success' ? '✓' : '!' }}
+    </span>
+
+    {{ notification.message }}
+  </div>
+}
+

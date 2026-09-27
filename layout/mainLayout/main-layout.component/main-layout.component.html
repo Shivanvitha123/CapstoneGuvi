@@ -1,0 +1,118 @@
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">◇</div>
+      <div>
+        <strong>RiskTwin</strong>
+        <small>Insurance Intelligence</small>
+      </div>
+    </div>
+
+    @if (user$ | async; as user) {
+      <div class="profile">
+        <div class="avatar">
+          {{ user.name.charAt(0).toUpperCase() }}
+        </div>
+
+        <div>
+          <strong>{{ user.name }}</strong>
+          <small>{{ user.role | roleLabel }}</small>
+        </div>
+      </div>
+    }
+
+    <nav>
+      <a
+        routerLink="/dashboard"
+        routerLinkActive="active"
+      >
+        <span>⌂</span>
+        Dashboard
+      </a>
+
+      <a
+        routerLink="/business"
+        routerLinkActive="active"
+      >
+        <span>◇</span>
+        Business
+      </a>
+
+      <a
+        routerLink="/policies"
+        routerLinkActive="active"
+      >
+        <span>▣</span>
+        Policies
+      </a>
+
+      <a
+        routerLink="/risk"
+        routerLinkActive="active"
+      >
+        <span>◈</span>
+        Risk Intelligence
+      </a>
+
+      <a
+        routerLink="/claims"
+        routerLinkActive="active"
+      >
+        <span>✓</span>
+        Claims
+      </a>
+
+      @if ((user$ | async)?.role === 'ADMIN') {
+        <a
+          routerLink="/users"
+          routerLinkActive="active"
+        >
+          <span>♙</span>
+          Users
+        </a>
+
+        <a
+          routerLink="/audit"
+          routerLinkActive="active"
+        >
+          <span>◫</span>
+          Audit
+        </a>
+      }
+    </nav>
+
+    <button class="logout" (click)="logout()">
+      ⇥ Logout
+    </button>
+  </aside>
+
+  <section class="content">
+    <header class="topbar">
+      <div>
+        <span>RiskTwin Platform</span>
+      </div>
+
+      @if (user$ | async; as user) {
+        <div class="top-user">
+          <div class="mini-avatar">
+            {{ user.name.charAt(0).toUpperCase() }}
+          </div>
+
+          <span>{{ user.name }}</span>
+        </div>
+      }
+    </header>
+
+    <main>
+      <router-outlet></router-outlet>
+    </main>
+
+    <footer>
+      <span>© 2026 RiskTwin</span>
+      <span>Secure · Intelligent · Connected</span>
+    </footer>
+  </section>
+
+  <app-notification></app-notification>
+</div>
