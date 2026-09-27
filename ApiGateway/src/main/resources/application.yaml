@@ -1,0 +1,224 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: API-GATEWAY
+
+  cloud:
+
+    gateway:
+      server:
+        webflux:
+
+          enabled: true
+
+          routes:
+
+            # =========================================================
+            # IDENTITY SERVICE
+            # =========================================================
+            - id: identity-service
+              uri: lb://IDENTITY-SERVICE
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: identityServiceCircuitBreaker
+                    fallbackUri: forward:/fallback/identity
+
+            # =========================================================
+            # BUSINESS PROFILE SERVICE
+            # =========================================================
+            - id: business-profile-service
+              uri: lb://BUSINESS-PROFILE-SERVICE
+              predicates:
+                - Path=/api/business/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: businessProfileCircuitBreaker
+                    fallbackUri: forward:/fallback/business
+
+            # =========================================================
+            # UNDERWRITING POLICY SERVICE
+            # =========================================================
+            - id: underwriting-policy-service
+              uri: lb://UNDERWRITING-POLICY-SERVICE
+              predicates:
+                - Path=/api/policies/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: underwritingPolicyCircuitBreaker
+                    fallbackUri: forward:/fallback/policy
+
+            # =========================================================
+            # RISK INTELLIGENCE SERVICE
+            # =========================================================
+            - id: risk-intelligence-service
+              uri: lb://RISK-INTELLIGENCE-SERVICE
+              predicates:
+                - Path=/api/risk/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: riskIntelligenceCircuitBreaker
+                    fallbackUri: forward:/fallback/risk
+
+            # =========================================================
+            # CLAIMS RECOVERY SERVICE
+            # =========================================================
+            - id: claims-recovery-service
+              uri: lb://CLAIMS-RECOVERY-SERVICE
+              predicates:
+                - Path=/api/claims/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: claimsRecoveryCircuitBreaker
+                    fallbackUri: forward:/fallback/claims
+
+            - id: notification-audit-service
+              uri: lb://NOTIFICATION-AUDIT-SERVICE
+              predicates:
+                - Path=/api/notifications/**,/api/audit/**,/api/events/**
+
+
+          # =========================================================
+          # GLOBAL CORS
+          # =========================================================
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:4200"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - PATCH
+                  - OPTIONS
+                allowedHeaders:
+                  - "*"
+                exposedHeaders:
+                  - Authorization
+                allowCredentials: true
+                maxAge: 3600
+
+          # =========================================================
+          # DEFAULT FILTERS
+          # =========================================================
+          default-filters:
+            - AddResponseHeader=X-Gateway-Name,RiskTwin-Nexus-Gateway
+
+    # ===============================================================
+    # EUREKA
+    # ===============================================================
+    loadbalancer:
+      enabled: true
+
+# =============================================================
+# EUREKA CLIENT
+# =============================================================
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+    register-with-eureka: true
+    fetch-registry: true
+
+  instance:
+    prefer-ip-address: false
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+
+# =============================================================
+# JWT
+# =============================================================
+jwt:
+  secret: ${JWT_SECRET:RiskTwinNexusJwtSecretKeyForDevelopmentOnly123456789}
+  expiration: 3600000
+
+# =============================================================
+# RESILIENCE4J
+# =============================================================
+resilience4j:
+
+  circuitbreaker:
+
+    configs:
+
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+
+    instances:
+
+      identityServiceCircuitBreaker:
+        baseConfig: default
+
+      businessProfileCircuitBreaker:
+        baseConfig: default
+
+      underwritingPolicyCircuitBreaker:
+        baseConfig: default
+
+      riskIntelligenceCircuitBreaker:
+        baseConfig: default
+
+      claimsRecoveryCircuitBreaker:
+        baseConfig: default
+
+# =============================================================
+# ACTUATOR
+# =============================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - gateway
+
+  endpoint:
+
+    health:
+      show-details: always
+
+    gateway:
+      access: read-only
+
+  metrics:
+    export:
+      simple:
+        enabled: true
+
+# =============================================================
+# LOGGING
+# =============================================================
+logging:
+  level:
+
+    root: INFO
+
+    com.risktwin.gateway: DEBUG
+
+    org.springframework.cloud.gateway: INFO
+
+    org.springframework.cloud.loadbalancer: INFO
+
+    org.springframework.security: INFO
+
+    reactor.netty.http.client: INFO
